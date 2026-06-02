@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")          # non-interactive backend for saving
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.patches import FancyArrowPatch
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 from orbital_mechanics import RE
 
 RESULTS_DIR = "results"
@@ -22,6 +22,93 @@ def _savefig(fig, filename):
     plt.close(fig)
     print(f"  [saved] {path}")
     return path
+
+
+# ─────────────────────────────────────────────
+# 0. Sistem Akış Diyagramı (Flowchart)
+# ─────────────────────────────────────────────
+
+def plot_flowchart(filename="system_flowchart.png"):
+    """
+    Simülasyonun mantıksal akışını gösteren flowchart.
+    PDF Bölüm 2.2 gereksinimi: Sistem Akış Diyagramı.
+    """
+    fig, ax = plt.subplots(figsize=(10, 16))
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 18)
+    ax.axis("off")
+    ax.set_facecolor("#f8f9fa")
+    fig.patch.set_facecolor("#f8f9fa")
+
+    def _rect(cx, cy, w, h, text, color="#4A90D9", textcolor="white", fontsize=9.5):
+        x0, y0 = cx - w / 2, cy - h / 2
+        rect = FancyBboxPatch((x0, y0), w, h, boxstyle="round,pad=0.12",
+                               facecolor=color, edgecolor="#2c3e50", lw=1.5, zorder=3)
+        ax.add_patch(rect)
+        ax.text(cx, cy, text, ha="center", va="center", fontsize=fontsize,
+                color=textcolor, zorder=4, multialignment="center")
+
+    def _diamond(cx, cy, w, h, text, color="#E67E22"):
+        dx, dy = w / 2, h / 2
+        xs = [cx, cx + dx, cx, cx - dx, cx]
+        ys = [cy + dy, cy, cy - dy, cy, cy + dy]
+        ax.fill(xs, ys, color=color, edgecolor="#2c3e50", lw=1.5, zorder=3)
+        ax.text(cx, cy, text, ha="center", va="center", fontsize=9,
+                color="white", fontweight="bold", zorder=4, multialignment="center")
+
+    def _oval(cx, cy, w, h, text, color="#1A5276"):
+        from matplotlib.patches import Ellipse
+        ax.add_patch(Ellipse((cx, cy), w, h, facecolor=color, edgecolor="#2c3e50", lw=1.5, zorder=3))
+        ax.text(cx, cy, text, ha="center", va="center", fontsize=10,
+                color="white", fontweight="bold", zorder=4)
+
+    def _arrow(x1, y1, x2, y2, label="", color="#2c3e50"):
+        ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
+                    arrowprops=dict(arrowstyle="-|>", color=color, lw=1.8, mutation_scale=18), zorder=2)
+        if label:
+            ax.text((x1 + x2) / 2 + 0.15, (y1 + y2) / 2, label,
+                    fontsize=8.5, color="#c0392b", fontweight="bold")
+
+    CX = 5.0
+    _oval(CX, 17.2, 3.0, 0.8, "BAŞLA")
+    _arrow(CX, 16.8, CX, 16.1)
+    _rect(CX, 15.7, 5.5, 0.8, "Orbital Eleman Girişi\n(a, e, i, Ω, ω, ν) + Kovaryans Matrisi", color="#2874A6")
+    _arrow(CX, 15.3, CX, 14.6)
+    _rect(CX, 14.2, 5.5, 0.7, "Yörünge Yayma\nRK45 + J2 Pertürbasyonu (ECI çerçeve)", color="#2874A6")
+    _arrow(CX, 13.85, CX, 13.15)
+    _rect(CX, 12.75, 5.5, 0.7, "TCA Tespiti\nKaba tarama + Cubic Spline rafine", color="#2874A6")
+    _arrow(CX, 12.4, CX, 11.7)
+    _rect(CX, 11.3, 5.5, 0.7, "Pc Hesabı\nChan 2D Projeksiyon — Gauss İntegrali", color="#2874A6")
+    _arrow(CX, 10.95, CX, 10.25)
+    _rect(CX, 9.85, 5.5, 0.7, "Risk Değerlendirmesi\nLOW / MEDIUM / HIGH / CRITICAL", color="#5D6D7E")
+    _arrow(CX, 9.5, CX, 8.7)
+    _diamond(CX, 8.2, 4.2, 1.0, "Pc ≥ 1e-4?\n(Eylem Eşiği)")
+    _arrow(CX + 2.1, 8.2, CX + 3.5, 8.2, label="Hayır", color="#27AE60")
+    ax.text(CX + 3.6, 8.2, "İzleme\nyeterli", ha="left", va="center", fontsize=8.5, color="#27AE60")
+    _arrow(CX, 7.7, CX, 7.0, label="Evet", color="#E74C3C")
+    _rect(CX, 6.6, 5.5, 0.7, "Manevra Planlama\nAlong-track / Radial / Cross-track / Optimal", color="#922B21")
+    _arrow(CX, 6.25, CX, 5.55)
+    _rect(CX, 5.15, 5.5, 0.7, "Delta-V Optimizasyonu\nBinary search → min |ΔV| s.t. Pc < 1e-5", color="#922B21")
+    _arrow(CX, 4.8, CX, 4.1)
+    _rect(CX, 3.7, 5.5, 0.7, "Yeni Yörünge Hesabı\nManevra sonrası propagasyon", color="#922B21")
+    _arrow(CX, 3.35, CX, 2.65)
+    _rect(CX, 2.25, 5.5, 0.7, "Çıktı: CDM + Grafikler\n3D Yörünge / Miss Dist. / Pc / Animasyon", color="#1E8449")
+    _arrow(CX, 1.9, CX, 1.2)
+    _oval(CX, 0.85, 3.0, 0.7, "BİTER")
+
+    ax.set_title("Satellite Collision Avoidance — Sistem Akış Diyagramı",
+                 fontsize=13, fontweight="bold", color="#1A5276", pad=10)
+    ax.text(5.0, 0.1,
+            "Modüller: orbital_mechanics | collision_detection | avoidance | scenarios | visualization",
+            ha="center", fontsize=7.5, color="#555", style="italic")
+
+    path = os.path.join(RESULTS_DIR, filename)
+    fig.savefig(path, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    plt.close(fig)
+    print(f"  [saved] {path}")
+    return path
+
+
 
 
 # ─────────────────────────────────────────────

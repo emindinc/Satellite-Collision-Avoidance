@@ -1,0 +1,21 @@
+SATELLITE COLLISION AVOIDANCE — MONTE CARLO RAPORU
+=================================================================
+
+Senaryo          : S2-Yüksek Risk
+Replikasyon (N)  : 200
+RNG tohumu       : 42
+
+ÇARPIŞMA OLASILIĞI (Pc)
+  Ortalama       : 1.682427e-05
+  Std. sapma     : 3.802968e-05
+  Medyan         : 1.594633e-09
+  %95 CI (boot.) : [1.180794e-05, 2.224005e-05]
+  P(Pc >= 1e-4)  : 0.0600
+
+MISS DISTANCE
+  Ortalama       : 5932.96 m
+  Std. sapma     : 4159.78 m
+
+YORUM
+  N=200 replikasyonun 6.0%'inde Pc eylem eşiğini (1e-4) aşmaktadır.
+  İzleme yeterlidir.

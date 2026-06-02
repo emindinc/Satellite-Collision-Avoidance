@@ -179,12 +179,19 @@ def _find_minimum_dv(sat1, sat2, t_arr, t_man, direction, cdm0,
 
 def _optimal_maneuver(sat1, sat2, t_arr, t_man, r_hat, t_hat, n_hat, cdm0):
     """
-    Search over all three axes to find the minimum-delta-V maneuver.
+    Search over all six axes (±along-track, ±radial, ±cross-track) to find
+    the minimum-delta-V maneuver. Retrograde burns are often more efficient
+    and are now included in the search space.
     """
     best = None
-    for strategy, direction in [("along-track", t_hat),
-                                 ("radial", r_hat),
-                                 ("cross-track", n_hat)]:
+    for strategy, direction in [
+        ("along-track (+)", t_hat),
+        ("along-track (-)", -t_hat),
+        ("radial (+)",      r_hat),
+        ("radial (-)",      -r_hat),
+        ("cross-track (+)", n_hat),
+        ("cross-track (-)", -n_hat),
+    ]:
         pos2, vel2 = sat2.propagate(t_arr)
         dv_mag = _find_minimum_dv(sat1, sat2, t_arr, t_man, direction, cdm0)
 

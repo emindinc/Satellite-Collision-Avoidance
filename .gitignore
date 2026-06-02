@@ -27,4 +27,5 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 
-# results/ is intentionally tracked — graphs and animation are project deliverables
+# Project report files
+raporlar/

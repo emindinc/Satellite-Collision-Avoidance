@@ -198,8 +198,12 @@ def _perpendicular_unit(v, ref):
     perp = v - proj
     mag = np.linalg.norm(perp)
     if mag < 1e-12:
-        # v parallel to ref — pick arbitrary perpendicular
-        perp = np.array([1.0, 0.0, 0.0]) - ref[0] * ref
+        # v parallel to ref — pick safe perpendicular based on dominant axis
+        # Avoids NaN when ref ≈ [1,0,0] (original code produced [0,0,0]/0)
+        if abs(ref[0]) > 0.9:
+            perp = np.array([0.0, 1.0, 0.0]) - ref[1] * ref
+        else:
+            perp = np.array([1.0, 0.0, 0.0]) - ref[0] * ref
         mag = np.linalg.norm(perp)
     return perp / mag
 

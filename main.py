@@ -7,10 +7,10 @@ Bu program, düşük Dünya yörüngesindeki (LEO) uydu çarpışmalarını
 tespit etmek ve kaçınma manevrası planlamak için bir simülasyon sunar.
 
 Kullanım:
-    python main.py [--scenario {1,2,3,4,all}]
+    python main.py [--scenario {1,2,3,4,all}] [--verify] [--monte-carlo]
 
 Gereksinimler:
-    pip install numpy scipy matplotlib
+    pip install numpy scipy matplotlib pillow
 """
 
 import sys
@@ -33,6 +33,16 @@ def run_all():
     print(BANNER)
     start = time.time()
 
+    # ── V&V: Doğrulama ve Geçerleme ─────────────────────────────
+    print("\n  Çalıştırılıyor: V&V (Verification & Validation) testleri...")
+    from verification import run_all_vv
+    run_all_vv()
+
+    # ── Flowchart ────────────────────────────────────────────────
+    print("\n  Generating system flowchart...")
+    import visualization as viz
+    viz.plot_flowchart()
+
     # ── Scenario 1 ──────────────────────────────────────────
     s1_cdm = sc.scenario1_low_risk_near_miss()
 
@@ -44,6 +54,11 @@ def run_all():
 
     # ── Scenario 4 ──────────────────────────────────────────
     s4_cdm_list, s4_result = sc.scenario4_multi_debris()
+
+    # ── Monte Carlo Replikasyon (Senaryo 2 üzerinde) ────────────
+    print("\n  Çalıştırılıyor: Monte Carlo Simülasyonu (N=200)...")
+    from monte_carlo import run_scenario2_monte_carlo
+    run_scenario2_monte_carlo(N=200)
 
     # ── Summary comparison ───────────────────────────────────
     print("\n  Generating summary comparison plot…")
@@ -89,9 +104,27 @@ def main():
         "--scenario", choices=["1", "2", "3", "4", "all"],
         default="all", help="Which scenario to run (default: all)"
     )
+    parser.add_argument(
+        "--verify", action="store_true",
+        help="Run V&V (Verification & Validation) tests only"
+    )
+    parser.add_argument(
+        "--monte-carlo", action="store_true",
+        help="Run Monte Carlo replication analysis (N=200, Scenario 2)"
+    )
     args = parser.parse_args()
 
     print(BANNER)
+
+    if args.verify:
+        from verification import run_all_vv
+        run_all_vv()
+        return
+
+    if args.monte_carlo:
+        from monte_carlo import run_scenario2_monte_carlo
+        run_scenario2_monte_carlo(N=200)
+        return
 
     if args.scenario == "1":
         sc.scenario1_low_risk_near_miss()
