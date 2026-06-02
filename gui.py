@@ -89,7 +89,7 @@ class App:
         option = self.run_option.get()
         
         # Komut satırı argümanlarını belirle (main.py'nin parametrelerine göre)
-        cmd = [sys.executable, "main.py"]
+        cmd = [sys.executable, "-X", "utf8", "main.py"]
         if option in ["1", "2", "3", "4", "all"]:
             cmd.extend(["--scenario", option])
         elif option == "verify":
