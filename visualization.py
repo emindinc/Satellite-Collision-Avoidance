@@ -17,6 +17,7 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
 def _savefig(fig, filename):
+    # Centralized save: consistent DPI, tight crop, and immediate close to free memory
     path = os.path.join(RESULTS_DIR, filename)
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -24,9 +25,7 @@ def _savefig(fig, filename):
     return path
 
 
-# ─────────────────────────────────────────────
 # 0. Sistem Akış Diyagramı (Flowchart)
-# ─────────────────────────────────────────────
 
 def plot_flowchart(filename="system_flowchart.png"):
     """
@@ -111,9 +110,7 @@ def plot_flowchart(filename="system_flowchart.png"):
 
 
 
-# ─────────────────────────────────────────────
 # 1. 3-D Orbit Plot
-# ─────────────────────────────────────────────
 def plot_orbits_3d(trajectories, labels, title="Satellite Orbits",
                    filename="orbits_3d.png", highlight_tca=None):
     """
@@ -153,9 +150,7 @@ def plot_orbits_3d(trajectories, labels, title="Satellite Orbits",
     return _savefig(fig, filename)
 
 
-# ─────────────────────────────────────────────
 # 2. Miss Distance Over Time
-# ─────────────────────────────────────────────
 def plot_miss_distance(t_arr, distances, tca_time_s, miss_dist_km,
                        maneuver_distances=None, title="Miss Distance Over Time",
                        filename="miss_distance.png"):
@@ -183,9 +178,7 @@ def plot_miss_distance(t_arr, distances, tca_time_s, miss_dist_km,
     return _savefig(fig, filename)
 
 
-# ─────────────────────────────────────────────
 # 3. Probability of Collision vs. Time-to-TCA
-# ─────────────────────────────────────────────
 def plot_pc_timeline(pc_curves, lead_times_h, curve_labels=None,
                      threshold=1e-4,
                      title="Pc vs. Maneuver Lead Time",
@@ -221,9 +214,7 @@ def plot_pc_timeline(pc_curves, lead_times_h, curve_labels=None,
     return _savefig(fig, filename)
 
 
-# ─────────────────────────────────────────────
 # 4. Delta-V vs. Miss Distance Trade-off
-# ─────────────────────────────────────────────
 def plot_dv_tradeoff(dv_range_ms, miss_values_m, pc_values,
                      original_miss_m, original_pc,
                      title="Delta-V Trade-off Analysis",
@@ -254,9 +245,7 @@ def plot_dv_tradeoff(dv_range_ms, miss_values_m, pc_values,
     return _savefig(fig, filename)
 
 
-# ─────────────────────────────────────────────
 # 5. Scenario Comparison Bar Chart
-# ─────────────────────────────────────────────
 def plot_scenario_comparison(scenario_names, miss_distances_m, pc_values,
                               filename="scenario_comparison.png"):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -293,9 +282,7 @@ def plot_scenario_comparison(scenario_names, miss_distances_m, pc_values,
     return _savefig(fig, filename)
 
 
-# ─────────────────────────────────────────────
 # 6. Multi-debris conjunction timeline
-# ─────────────────────────────────────────────
 def plot_multi_conjunction_timeline(cdm_list, t_total_h,
                                     filename="multi_conjunction_timeline.png"):
     fig, ax = plt.subplots(figsize=(12, 5))
@@ -330,9 +317,7 @@ def plot_multi_conjunction_timeline(cdm_list, t_total_h,
     return _savefig(fig, filename)
 
 
-# ─────────────────────────────────────────────
 # 7. Relative motion in LVLH frame
-# ─────────────────────────────────────────────
 def plot_relative_motion(pos1, pos2, tca_idx,
                          man_pos1=None, title="Relative Motion (LVLH Frame)",
                          filename="relative_motion.png"):
@@ -370,9 +355,7 @@ def plot_relative_motion(pos1, pos2, tca_idx,
     return _savefig(fig, filename)
 
 
-# ─────────────────────────────────────────────
 # 8. Conjunction Window Animation
-# ─────────────────────────────────────────────
 def animate_conjunction(positions1, positions2, t_arr, tca_time_s,
                         labels, title="Conjunction Animation",
                         filename="conjunction_animation.gif",
@@ -443,7 +426,7 @@ def animate_conjunction(positions1, positions2, t_arr, tca_time_s,
         d_orig = dists_orig[frame] * 1000
         is_tca = dists_orig[frame] <= tca_min_dist * 1.05
 
-        # ── Panel 0: original ──────────────────────────────────────────
+        # Panel 0: original trajectory
         ax0 = axes[0]
         _draw_full_traj(ax0, positions1, positions2)
 
@@ -466,7 +449,7 @@ def animate_conjunction(positions1, positions2, t_arr, tca_time_s,
                      + ("  *** TCA ***" if is_tca else ""))
         _setup_ax(ax0, subtitle0)
 
-        # ── Panel 1: post-maneuver (if provided) ───────────────────────
+        # Panel 1: post-maneuver (only rendered if man_p1w is given)
         if man_p1w is not None:
             ax1 = axes[1]
             _draw_full_traj(ax1, man_positions1, positions2)

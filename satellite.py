@@ -31,6 +31,7 @@ class Satellite:
     )
 
     def _rad_elements(self):
+        # Angular elements are stored in degrees; propagator expects radians
         return (
             self.a, self.e,
             np.deg2rad(self.i),

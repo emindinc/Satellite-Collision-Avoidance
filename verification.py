@@ -35,24 +35,21 @@ from collision_detection import probability_of_collision
 RESULTS_DIR = "results"
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# ─────────────────────────────────────────────────────────────
-# Yardımcı
-# ─────────────────────────────────────────────────────────────
+# helpers
 
 def _mechanical_energy(r_arr, v_arr):
     """Mekanik enerji dizisi: E = v²/2 - μ/r  (km²/s²)"""
-    v2 = np.sum(v_arr ** 2, axis=1)
-    r  = np.linalg.norm(r_arr, axis=1)
-    return v2 / 2.0 - MU / r
+    v2 = np.sum(v_arr ** 2, axis=1)      # |v|² per row
+    r  = np.linalg.norm(r_arr, axis=1)   # |r| at each time step
+    return v2 / 2.0 - MU / r             # kinetic - potential
 
 
 def _relative_error(a, b):
+    # +1e-30 guards against division by zero when b == 0
     return abs(a - b) / (abs(b) + 1e-30)
 
 
-# ─────────────────────────────────────────────────────────────
-# V1 — Enerji Korunumu
-# ─────────────────────────────────────────────────────────────
+# V1: Enerji Korunumu
 
 def verify_energy_conservation(a_km=6778.0, n_orbits=5):
     """
@@ -113,9 +110,7 @@ def verify_energy_conservation(a_km=6778.0, n_orbits=5):
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# V2 — Gidiş-Dönüş Tutarlılığı
-# ─────────────────────────────────────────────────────────────
+# V2: Gidiş-Dönüş Tutarlılığı
 
 def verify_roundtrip():
     """
@@ -165,9 +160,7 @@ def verify_roundtrip():
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# V3 — Dairesel Yörüngede Hız
-# ─────────────────────────────────────────────────────────────
+# V3: Dairesel Yörüngede Hız
 
 def verify_circular_velocity():
     """
@@ -199,9 +192,7 @@ def verify_circular_velocity():
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# G1 — Kepler 3. Yasası (Periyot)
-# ─────────────────────────────────────────────────────────────
+# G1: Kepler 3. Yasası (Periyot)
 
 def validate_orbital_period():
     """
@@ -254,9 +245,7 @@ def validate_orbital_period():
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# G2 — Pc Sınır Koşulları
-# ─────────────────────────────────────────────────────────────
+# G2: Pc Sınır Koşulları
 
 def validate_pc_boundary():
     """
@@ -342,9 +331,7 @@ def validate_pc_boundary():
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# Ana çalıştırıcı
-# ─────────────────────────────────────────────────────────────
+# ana çalıştırıcı
 
 def run_all_vv():
     """Tüm V&V testlerini çalıştır, özet raporu yaz."""

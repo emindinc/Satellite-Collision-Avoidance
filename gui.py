@@ -6,6 +6,8 @@ import sys
 import os
 
 class App:
+    """Tkinter GUI that runs main.py scenarios in a subprocess and streams output."""
+
     def __init__(self, root):
         self.root = root
         self.root.title("Uydu Çarpışma Önleme Simülasyonu - Arayüz")
@@ -69,9 +71,11 @@ class App:
         self.output_text.bind("<Button-3>", self.show_context_menu)
 
     def show_context_menu(self, event):
+        # Display right-click context menu at cursor position
         self.context_menu.tk_popup(event.x_root, event.y_root)
 
     def copy_text(self):
+        # Copy selected text to clipboard; silently skip if nothing is selected
         try:
             selected_text = self.output_text.selection_get()
             self.root.clipboard_clear()
@@ -134,10 +138,12 @@ class App:
             self.root.after(0, self.enable_button)
             
     def append_output(self, text):
+        # Called from the main thread via root.after(); appends one line at a time
         self.output_text.insert(tk.END, text)
         self.output_text.see(tk.END) # Otomatik en alta kaydır
-        
+
     def enable_button(self):
+        # Re-enable run button after subprocess finishes
         self.run_btn.config(state=tk.NORMAL)
 
 if __name__ == "__main__":

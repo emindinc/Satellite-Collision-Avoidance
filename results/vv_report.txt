@@ -6,12 +6,12 @@ SATELLITE COLLISION AVOIDANCE — V&V RAPORU
   Tolerans                      : 2e-03
 
 [GEÇER]  V2 — Gidiş-Dönüş Tutarlılığı
-  Hata (a_km        ) : 1.819e-12   (tol=1e-06)
-  Hata (e           ) : 3.123e-17   (tol=1e-09)
+  Hata (a_km        ) : 2.728e-12   (tol=1e-06)
+  Hata (e           ) : 7.112e-17   (tol=1e-09)
   Hata (i_deg       ) : 0.000e+00   (tol=1e-07)
-  Hata (raan_deg    ) : 7.105e-15   (tol=1e-07)
-  Hata (argp_deg    ) : 8.882e-13   (tol=1e-07)
-  Hata (nu_deg      ) : 9.095e-13   (tol=1e-07)
+  Hata (raan_deg    ) : 3.553e-15   (tol=1e-07)
+  Hata (argp_deg    ) : 2.295e-12   (tol=1e-07)
+  Hata (nu_deg      ) : 2.288e-12   (tol=1e-07)
 
 [GEÇER]  V3 — Dairesel Yörüngede Hız
   a=6778 km  v_calc=7.668636  v_analytic=7.668636  err=0.00e+00

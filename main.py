@@ -33,34 +33,34 @@ def run_all():
     print(BANNER)
     start = time.time()
 
-    # ── V&V: Doğrulama ve Geçerleme ─────────────────────────────
+    # V&V
     print("\n  Çalıştırılıyor: V&V (Verification & Validation) testleri...")
     from verification import run_all_vv
     run_all_vv()
 
-    # ── Flowchart ────────────────────────────────────────────────
+    # Flowchart
     print("\n  Generating system flowchart...")
     import visualization as viz
     viz.plot_flowchart()
 
-    # ── Scenario 1 ──────────────────────────────────────────
+    # Scenario 1
     s1_cdm = sc.scenario1_low_risk_near_miss()
 
-    # ── Scenario 2 ──────────────────────────────────────────
+    # Scenario 2
     s2_cdm, s2_result = sc.scenario2_high_risk_avoidance()
 
-    # ── Scenario 3 ──────────────────────────────────────────
+    # Scenario 3
     s3_cdm, dv_range, miss_vals, pc_vals = sc.scenario3_dv_sensitivity()
 
-    # ── Scenario 4 ──────────────────────────────────────────
+    # Scenario 4
     s4_cdm_list, s4_result = sc.scenario4_multi_debris()
 
-    # ── Monte Carlo Replikasyon (Senaryo 2 üzerinde) ────────────
+    # Monte Carlo (Senaryo 2)
     print("\n  Çalıştırılıyor: Monte Carlo Simülasyonu (N=200)...")
     from monte_carlo import run_scenario2_monte_carlo
     run_scenario2_monte_carlo(N=200)
 
-    # ── Summary comparison ───────────────────────────────────
+    # Summary comparison
     print("\n  Generating summary comparison plot…")
     sc.plot_all_scenario_summary(s1_cdm, s2_cdm, s2_result, s4_cdm_list)
 
@@ -74,6 +74,7 @@ def run_all():
 
 
 def _print_summary_table(s1, s2, s2_result, s4_list):
+    # Collects CDM results from all scenarios into a single console table
     print("\n  RESULTS SUMMARY")
     print(f"  {'Scenario':<30} {'Miss (m)':>12} {'Pc':>12} {'Risk':<10}")
     print("  " + "-" * 68)

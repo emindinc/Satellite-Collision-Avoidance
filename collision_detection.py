@@ -34,10 +34,11 @@ def find_tca(positions1, positions2, t_arr):
     tca_time  : float  refined TCA time (s)
     miss_dist : float  refined miss distance (km)
     """
+    # Per-step separation distances (N,) — coarse pass over the full trajectory
     diffs = np.linalg.norm(positions1 - positions2, axis=1)
-    idx = int(np.argmin(diffs))
+    idx = int(np.argmin(diffs))  # index of the closest step
 
-    # Refine with spline over a window of ±3 points around the coarse minimum
+    # ±3 point window gives 7 points — enough for a smooth cubic spline
     i_lo = max(0, idx - 3)
     i_hi = min(len(t_arr) - 1, idx + 3)
     t_win = t_arr[i_lo:i_hi + 1]
@@ -45,10 +46,12 @@ def find_tca(positions1, positions2, t_arr):
 
     if len(t_win) >= 4:
         cs = CubicSpline(t_win, d_win)
+        # Bounded minimisation finds sub-step TCA within the window
         res = minimize_scalar(cs, bounds=(t_win[0], t_win[-1]), method="bounded")
         tca_time = float(res.x)
         miss_dist = float(res.fun)
     else:
+        # Window too small (edge of array) — fall back to coarse index
         tca_time = t_arr[idx]
         miss_dist = diffs[idx]
 
@@ -58,10 +61,10 @@ def find_tca(positions1, positions2, t_arr):
 def _interp_state(positions, velocities, t_arr, t_query):
     """Linearly interpolate position and velocity at t_query."""
     idx = int(np.searchsorted(t_arr, t_query))
-    idx = np.clip(idx, 1, len(t_arr) - 1)
+    idx = np.clip(idx, 1, len(t_arr) - 1)  # stay within valid bracket
     t0, t1 = t_arr[idx - 1], t_arr[idx]
-    alpha = (t_query - t0) / (t1 - t0) if t1 != t0 else 0.0
-    r = positions[idx - 1] + alpha * (positions[idx] - positions[idx - 1])
+    alpha = (t_query - t0) / (t1 - t0) if t1 != t0 else 0.0  # linear interp weight
+    r = positions[idx - 1]  + alpha * (positions[idx]  - positions[idx - 1])
     v = velocities[idx - 1] + alpha * (velocities[idx] - velocities[idx - 1])
     return r, v
 
@@ -129,25 +132,25 @@ def probability_of_collision(r1, r2, v1, v2, cov1, cov2, R_hbr=HARD_BODY_RADIUS)
     -------
     pc : float   probability of collision [0, 1]
     """
-    r_rel = r2 - r1
-    v_rel = v2 - v1
+    r_rel = r2 - r1   # relative position vector at TCA (km)
+    v_rel = v2 - v1   # relative velocity vector at TCA (km/s)
     v_rel_mag = np.linalg.norm(v_rel)
 
     if v_rel_mag < 1e-12:
-        return 0.0
+        return 0.0  # essentially stationary relative to each other — no meaningful Pc
 
-    # Unit vectors for collision plane
-    e_z = v_rel / v_rel_mag
-    e_x = _perpendicular_unit(r_rel, e_z)
-    e_y = np.cross(e_z, e_x)
+    # Build orthonormal basis for the collision plane (⊥ to v_rel)
+    e_z = v_rel / v_rel_mag            # along relative velocity (out-of-plane axis)
+    e_x = _perpendicular_unit(r_rel, e_z)   # in-plane, toward r_rel direction
+    e_y = np.cross(e_z, e_x)          # completes right-hand frame
 
-    # Combined position covariance (3x3)
+    # Sum of covariances — Chan method assumes both uncertainties contribute
     C_combined = cov1[:3, :3] + cov2[:3, :3]
 
-    # Project onto collision plane (2x3 projection matrix)
-    P = np.array([e_x, e_y])          # (2, 3)
-    C2d = P @ C_combined @ P.T        # (2, 2)
-    x2d = P @ r_rel                   # (2,) — relative position in collision plane
+    # Project 3D covariance and relative position into the 2D collision plane
+    P = np.array([e_x, e_y])          # (2, 3) projection matrix
+    C2d = P @ C_combined @ P.T        # (2, 2) projected covariance
+    x2d = P @ r_rel                   # (2,) relative position in collision plane
 
     pc = _chan_pc_2d(x2d, C2d, R_hbr)
     return float(np.clip(pc, 0.0, 1.0))
@@ -165,23 +168,25 @@ def _chan_pc_2d(mu, sigma, R):
     from scipy.integrate import dblquad
     from scipy.stats import multivariate_normal
 
-    # Clamp covariance eigenvalues to avoid singular matrix
+    # Clamp eigenvalues to avoid singular / near-singular covariance matrix
     eigvals, eigvecs = np.linalg.eigh(sigma)
-    eigvals = np.maximum(eigvals, 1e-20)
-    sigma_clamped = eigvecs @ np.diag(eigvals) @ eigvecs.T
+    eigvals = np.maximum(eigvals, 1e-20)         # floor at a tiny positive value
+    sigma_clamped = eigvecs @ np.diag(eigvals) @ eigvecs.T  # reconstruct SPD matrix
 
     rv = multivariate_normal(mean=mu, cov=sigma_clamped)
 
     try:
+        # Integrate Gaussian PDF over the disk |r| ≤ R (hard-body radius)
         result, _ = dblquad(
             lambda y, x: rv.pdf([x, y]),
             -R, R,
-            lambda x: -np.sqrt(max(R**2 - x**2, 0.0)),
-            lambda x:  np.sqrt(max(R**2 - x**2, 0.0)),
+            lambda x: -np.sqrt(max(R**2 - x**2, 0.0)),  # lower semicircle bound
+            lambda x:  np.sqrt(max(R**2 - x**2, 0.0)),  # upper semicircle bound
             epsabs=1e-10, epsrel=1e-8,
         )
         return float(result)
     except Exception:
+        # dblquad can fail for very concentrated distributions — fall back to MC
         return _mc_pc(mu, sigma_clamped, R)
 
 

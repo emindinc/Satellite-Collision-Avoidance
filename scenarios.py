@@ -18,6 +18,7 @@ import visualization as viz
 
 
 def _time_array(hours, dt_s=10):
+    # 10-second step is fine enough for cubic-spline TCA refinement
     return np.arange(0, hours * 3600 + dt_s, dt_s, dtype=float)
 
 
@@ -25,6 +26,7 @@ def _time_array(hours, dt_s=10):
 # Primary active satellite (same for all scenarios)
 # ---------------------------------------------------------------
 def _primary_sat(cov_pos_var):
+    # Only position covariance changes between scenarios; attitude/velocity cov fixed
     return Satellite(
         name="SAT-A (active)",
         a=6778.0, e=0.0, i=53.0, raan=0.0, argp=0.0, nu=0.0,

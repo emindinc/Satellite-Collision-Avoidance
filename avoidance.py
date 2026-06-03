@@ -35,25 +35,26 @@ def apply_maneuver(sat, dv_eci, maneuver_time_s, t_arr):
         pos_post, vel_post = propagate_orbit(r_burn, v_burn, t_arr)
         return pos_post, vel_post
 
-    # Propagate to maneuver point
+    # Propagate up to the burn point (~10-second steps, same as main t_arr)
     n_steps = max(int(maneuver_time_s / 10) + 2, 3)
     t_burn = np.linspace(0.0, maneuver_time_s, n_steps)
     pos_pre, vel_pre = propagate_orbit(r0, v0, t_burn)
     r_burn = pos_pre[-1]
-    v_burn = vel_pre[-1] + dv_eci
+    v_burn = vel_pre[-1] + dv_eci  # impulsive delta-V applied instantaneously
 
-    # Propagate from maneuver point to end of t_arr
+    # Post-burn time array: reset to 0 at the maneuver point
     t_post = t_arr[t_arr >= maneuver_time_s] - maneuver_time_s
     if len(t_post) < 2:
+        # Edge case: maneuver is very close to the end of the simulation
         t_post = np.array([0.0, t_arr[-1] - maneuver_time_s])
     pos_post, vel_post = propagate_orbit(r_burn, v_burn, t_post)
 
-    # Stitch together
+    # Join pre-burn and post-burn segments; n_pre is the splice index
     n_pre = int(np.searchsorted(t_arr, maneuver_time_s))
     pos_full = np.vstack([pos_pre[:n_pre], pos_post])
     vel_full = np.vstack([vel_pre[:n_pre], vel_post])
 
-    # Pad/trim to match t_arr length
+    # Pad or trim so the output always has exactly len(t_arr) rows
     N = len(t_arr)
     if len(pos_full) < N:
         pos_full = np.vstack([pos_full, np.tile(pos_full[-1], (N - len(pos_full), 1))])
@@ -70,10 +71,10 @@ def _lvlh_axes(r, v):
     Compute LVLH (Local Vertical Local Horizontal) unit vectors.
     Returns: r_hat (radial), t_hat (along-track), n_hat (cross-track)
     """
-    r_hat = r / np.linalg.norm(r)
+    r_hat = r / np.linalg.norm(r)         # radial: points away from Earth center
     h_vec = np.cross(r, v)
-    n_hat = h_vec / np.linalg.norm(h_vec)
-    t_hat = np.cross(n_hat, r_hat)
+    n_hat = h_vec / np.linalg.norm(h_vec) # normal: perpendicular to orbital plane
+    t_hat = np.cross(n_hat, r_hat)        # along-track: tangent to orbit, prograde
     return r_hat, t_hat, n_hat
 
 
@@ -154,26 +155,27 @@ def _find_minimum_dv(sat1, sat2, t_arr, t_man, direction, cdm0,
     Target = 1e-5 so that the maneuver produces a clearly visible miss distance change.
     max_dv = 0.05 km/s = 50 m/s upper bound.
     """
-    target_pc = PC_ACTION_THRESHOLD / 10   # 1e-5 — safety margin
+    target_pc = PC_ACTION_THRESHOLD / 10   # 1e-5 — one order of magnitude safety margin
     pos2, vel2 = sat2.propagate(t_arr)
-    lo, hi = 0.0, max_dv
+    lo, hi = 0.0, max_dv  # search bracket in km/s
 
     for _ in range(n_steps):
-        mid = (lo + hi) / 2
+        mid = (lo + hi) / 2  # bisect
         dv_eci = mid * direction
         new_pos1, new_vel1 = apply_maneuver(sat1, dv_eci, t_man, t_arr)
         new_dist = np.linalg.norm(new_pos1 - pos2, axis=1)
-        idx = int(np.argmin(new_dist))
+        idx = int(np.argmin(new_dist))  # new TCA index after the maneuver
         pc = probability_of_collision(
             new_pos1[idx], pos2[idx],
             new_vel1[idx], vel2[idx],
             sat1.covariance, sat2.covariance,
         )
         if pc < target_pc:
-            hi = mid
+            hi = mid  # maneuver works — try a smaller dV
         else:
-            lo = mid
+            lo = mid  # not enough — need a bigger dV
 
+    # hi converges to the smallest dV that satisfies the Pc target
     return hi
 
 
@@ -184,6 +186,7 @@ def _optimal_maneuver(sat1, sat2, t_arr, t_man, r_hat, t_hat, n_hat, cdm0):
     and are now included in the search space.
     """
     best = None
+    # Test all 6 LVLH directions: retrograde burns are often cheaper than prograde
     for strategy, direction in [
         ("along-track (+)", t_hat),
         ("along-track (-)", -t_hat),
@@ -195,7 +198,7 @@ def _optimal_maneuver(sat1, sat2, t_arr, t_man, r_hat, t_hat, n_hat, cdm0):
         pos2, vel2 = sat2.propagate(t_arr)
         dv_mag = _find_minimum_dv(sat1, sat2, t_arr, t_man, direction, cdm0)
 
-        if best is None or dv_mag < best["dv_mag"]:
+        if best is None or dv_mag < best["dv_mag"]:  # keep the cheapest direction
             dv_eci = dv_mag * direction
             new_pos1, new_vel1 = apply_maneuver(sat1, dv_eci, t_man, t_arr)
             new_dist = np.linalg.norm(new_pos1 - pos2, axis=1)

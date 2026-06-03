@@ -37,9 +37,7 @@ RESULTS_DIR = "results"
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
-# ─────────────────────────────────────────────────────────────
-# Temel yardımcılar
-# ─────────────────────────────────────────────────────────────
+# temel yardımcılar
 
 def _perturb_state(sat, rng):
     """
@@ -112,9 +110,7 @@ def _bootstrap_ci(data, n_boot=2000, ci=0.95, seed=0):
     return float(np.quantile(means, alpha)), float(np.quantile(means, 1 - alpha))
 
 
-# ─────────────────────────────────────────────────────────────
-# Ana simülasyon döngüsü
-# ─────────────────────────────────────────────────────────────
+# ana simülasyon döngüsü
 
 def run_monte_carlo(sat1, sat2, t_arr, N=200, seed=42, scenario_name="S2"):
     """
@@ -181,9 +177,7 @@ def run_monte_carlo(sat1, sat2, t_arr, N=200, seed=42, scenario_name="S2"):
     return results
 
 
-# ─────────────────────────────────────────────────────────────
-# Çıktılar
-# ─────────────────────────────────────────────────────────────
+# çıktılar
 
 def _print_summary(r):
     print(f"\n  {'─'*55}")
@@ -210,7 +204,7 @@ def _save_plots(r):
         fontsize=14, fontweight="bold"
     )
 
-    # ── 1. Pc Histogramı ────────────────────────────────────────
+    # 1. Pc Histogramı
     ax = axes[0, 0]
     ax.hist(np.log10(pc + 1e-15), bins=30, color="steelblue",
             edgecolor="white", alpha=0.85)
@@ -224,7 +218,7 @@ def _save_plots(r):
     ax.legend(fontsize=9)
     ax.grid(True, alpha=0.3)
 
-    # ── 2. Pc Kümülatif Dağılım (CDF) ────────────────────────────
+    # 2. Pc Kümülatif Dağılım (CDF)
     ax = axes[0, 1]
     sorted_pc = np.sort(pc)
     cdf = np.arange(1, len(pc) + 1) / len(pc)
@@ -240,7 +234,7 @@ def _save_plots(r):
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.3)
 
-    # ── 3. Miss Distance Histogramı ──────────────────────────────
+    # 3. Miss Distance Histogramı
     ax = axes[1, 0]
     ax.hist(miss, bins=30, color="darkorange", edgecolor="white", alpha=0.85)
     ax.axvline(r["mean_miss_km"] * 1000, color="red", lw=2,
@@ -253,7 +247,7 @@ def _save_plots(r):
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.3)
 
-    # ── 4. Pc vs. Miss Scatter ───────────────────────────────────
+    # 4. Pc vs. Miss Scatter
     ax = axes[1, 1]
     sc = ax.scatter(miss, pc + 1e-15, c=np.arange(len(pc)),
                     cmap="viridis", alpha=0.5, s=18)
@@ -303,9 +297,7 @@ def _save_report(r):
     print(f"  [saved] {path}")
 
 
-# ─────────────────────────────────────────────────────────────
-# Hazır senaryo çalıştırıcısı (Senaryo 2 — yüksek riskli)
-# ─────────────────────────────────────────────────────────────
+# hazır senaryo çalıştırıcısı — Senaryo 2 (yüksek riskli)
 
 def run_scenario2_monte_carlo(N=200):
     """
